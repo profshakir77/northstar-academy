@@ -5,12 +5,12 @@ import { useAuth } from '../auth.jsx';
 import { Alert, Empty, Img, Initials } from '../components/ui.jsx';
 import CourseManager from './CourseManager.jsx';
 import { useSeo } from '../seo.js';
-import { AdminOverview, AdminUsers, AdminEnrollments, AdminInquiries } from './Admin.jsx';
+import { AdminOverview, AdminUsers, AdminEnrollments, AdminInquiries, AdminApplications } from './Admin.jsx';
 
 const menus = {
   student: [['', 'My classes'], ['profile', 'Profile']],
   instructor: [['', 'My courses'], ['profile', 'Profile']],
-  admin: [['', 'Overview'], ['courses', 'Courses'], ['users', 'Users'], ['enrollments', 'Enrollments'], ['inquiries', 'Inquiries'], ['profile', 'Profile']],
+  admin: [['', 'Overview'], ['courses', 'Courses'], ['users', 'Users'], ['applications', 'Applications'], ['enrollments', 'Enrollments'], ['inquiries', 'Trial requests'], ['profile', 'Profile']],
 };
 
 export default function Dashboard() {
@@ -31,6 +31,7 @@ export default function Dashboard() {
             <>
               <Route path="courses" element={<CourseManager admin />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="applications" element={<AdminApplications />} />
               <Route path="enrollments" element={<AdminEnrollments />} />
               <Route path="inquiries" element={<AdminInquiries />} />
             </>

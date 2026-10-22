@@ -346,3 +346,45 @@ label.lesson-top { cursor: pointer; }
   .lesson-edit-top { flex-wrap: wrap; }
   .section { padding: 56px 0; }
 }
+
+/* admissions */
+.adm-steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.adm-steps li { padding: 1.4rem; position: relative; }
+.adm-steps p { color: var(--muted); font-size: .92rem; margin: 0; }
+.step-no { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--navy); color: var(--amber); font-weight: 700; margin-bottom: .8rem; }
+.elig { margin: 0; }
+.elig div { padding: .9rem 0; border-bottom: 1px solid var(--line); }
+.elig dt { font-weight: 700; color: var(--navy); }
+.elig dd { margin: .2rem 0 0; color: var(--muted); font-size: .93rem; }
+.ticks.one { grid-template-columns: 1fr; margin-bottom: 1.4rem; }
+.dates h3 { margin-bottom: .6rem; }
+.fee-table td:nth-child(2) { font-weight: 700; color: var(--navy); white-space: nowrap; }
+.policy-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 1.5rem; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 auto 1rem; max-width: 980px; }
+.tabs button { font: 600 .92rem var(--font); padding: .65rem 1.1rem; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--navy); cursor: pointer; }
+.tabs button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+.app-form { max-width: 980px; margin-inline: auto; }
+.app-form h2 { margin: 0 0 .2rem; font-size: 1.6rem; }
+.app-form fieldset { border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem 1.2rem 1.3rem; margin: 0; display: grid; gap: 1rem; }
+.app-form legend { font-weight: 700; color: var(--navy); padding: 0 .4rem; }
+.span2 { grid-column: span 2; }
+.span3 { grid-column: 1 / -1; }
+.course-picks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pick { display: flex !important; flex-direction: row !important; align-items: center; gap: .7rem !important; border: 1px solid var(--line); border-radius: 10px; padding: .75rem .9rem; cursor: pointer; font-weight: 500 !important; }
+.pick.on { border-color: var(--amber); background: #fffaf0; }
+.pick span { flex: 1; display: flex; flex-direction: column; }
+.pick small { color: var(--muted); font-size: .8rem; }
+.pick b { color: var(--navy); white-space: nowrap; }
+.fee-sum { margin: 0; padding: .8rem 1rem; background: var(--bg-alt); border-radius: 10px; }
+.applied { max-width: 640px; margin: 0 auto; align-items: center; }
+.applied .left { text-align: left; width: 100%; }
+.ref-no { font-family: var(--serif); font-size: 2rem; color: var(--navy); font-weight: 700; margin: 0; letter-spacing: .04em; }
+.status-box { border-top: 1px solid var(--line); padding-top: 1rem; }
+.status-box p { margin: .3rem 0; }
+.app-detail { margin-top: .8rem; padding-top: .8rem; border-top: 1px dashed var(--line); display: grid; gap: .6rem; }
+.app-detail dl { display: grid; grid-template-columns: repeat(4, 1fr); gap: .6rem 1rem; margin: 0; }
+.app-detail dt { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.app-detail dd { margin: 0; font-size: .9rem; }
+.app-detail label { display: flex; flex-direction: column; gap: .3rem; font-weight: 600; }
+@media (max-width: 1024px) { .adm-steps, .policy-grid { grid-template-columns: 1fr 1fr; } .app-detail dl { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .adm-steps, .policy-grid, .course-picks, .app-detail dl { grid-template-columns: 1fr; } .span2 { grid-column: auto; } }

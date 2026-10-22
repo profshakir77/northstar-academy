@@ -10,7 +10,7 @@ export function AdminOverview() {
   const [err, setErr] = useState('');
   useEffect(() => { api('/admin/stats').then(setS).catch((e) => setErr(e.message)); }, []);
   if (!s) return err ? <Alert>{err}</Alert> : <div className="spinner" />;
-  const cards = [['Students', s.students], ['Teachers', s.instructors], ['Courses', s.courses], ['Active enrollments', s.active], ['Pending payments', s.pending], ['New inquiries', s.newInquiries], ['Revenue (paid)', pkr(s.revenue)]];
+  const cards = [['Students', s.students], ['Teachers', s.instructors], ['Courses', s.courses], ['Active enrollments', s.active], ['Pending payments', s.pending], ['New applications', s.newApplications], ['New trial requests', s.newInquiries], ['Revenue (paid)', pkr(s.revenue)]];
   return (
     <>
       <div className="dash-head"><div><h1>Academy overview</h1><p className="muted">Live numbers from the database.</p></div></div>
@@ -90,7 +90,7 @@ export function AdminInquiries() {
   }
   return (
     <>
-      <div className="dash-head"><div><h1>Admission inquiries</h1><p className="muted">Requests sent from the admissions form.</p></div></div>
+      <div className="dash-head"><div><h1>Trial class requests</h1><p className="muted">Free trial requests sent from the admissions page.</p></div></div>
       <Alert>{err}</Alert>
       {!list ? <div className="spinner" /> : list.length === 0 ? <p className="muted">No inquiries yet.</p> : (
         <div className="inq-list">{list.map((i) => (
@@ -99,6 +99,58 @@ export function AdminInquiries() {
             <p className="muted small">{i.level || 'Level not given'} · {date(i.createdAt)}</p>
             <p>{i.message}</p>
             <div className="row-gap">{['new', 'contacted', 'closed'].map((s) => <button key={s} className={`btn btn-sm ${i.status === s ? 'btn-primary' : 'btn-light'}`} onClick={() => patch(i, s)}>{s}</button>)}</div>
+          </article>
+        ))}</div>
+      )}
+    </>
+  );
+}
+
+const APP_STATUSES = ['submitted', 'test scheduled', 'admitted', 'waitlisted', 'declined'];
+
+export function AdminApplications() {
+  const [list, setList] = useState(null);
+  const [filter, setFilter] = useState('');
+  const [open, setOpen] = useState(null);
+  const [msg, setMsg] = useState({ ok: '', err: '' });
+  useEffect(() => { api('/admin/applications').then((d) => setList(d.applications)).catch((e) => setMsg({ ok: '', err: e.message })); }, []);
+  async function patch(a, body) {
+    try { await api(`/admin/applications/${a.id}`, { method: 'PATCH', body }); setList((l) => l.map((x) => (x.id === a.id ? { ...x, ...body } : x))); setMsg({ ok: `Updated ${a.ref}.`, err: '' }); } catch (e) { setMsg({ ok: '', err: e.message }); }
+  }
+  const shown = (list || []).filter((a) => !filter || a.status === filter);
+  return (
+    <>
+      <div className="dash-head"><div><h1>Admission applications</h1><p className="muted">Applications from the admissions page. Book the placement test, then mark the result.</p></div>
+        <select value={filter} onChange={(e) => setFilter(e.target.value)} style={{ width: 'auto' }}><option value="">All statuses</option>{APP_STATUSES.map((s) => <option key={s}>{s}</option>)}</select></div>
+      <Alert>{msg.err}</Alert><Alert kind="ok">{msg.ok}</Alert>
+      {!list ? <div className="spinner" /> : shown.length === 0 ? <p className="muted">No applications yet.</p> : (
+        <div className="inq-list">{shown.map((a) => (
+          <article key={a.id} className="card inq">
+            <div className="inq-head">
+              <div><strong>{a.student.name}</strong> <span className="muted">· {a.student.level} · {a.ref}</span></div>
+              <select value={a.status} onChange={(e) => patch(a, { status: e.target.value })} style={{ width: 'auto' }}>{APP_STATUSES.map((s) => <option key={s}>{s}</option>)}</select>
+            </div>
+            <p className="muted small">{a.guardian.name}{a.guardian.relation ? ` (${a.guardian.relation})` : ''} · {a.guardian.phone} · {a.guardian.email} · {date(a.createdAt)}</p>
+            <p>{a.courses.map((c) => c.title).join(', ')} · <strong>{pkr(a.courses.reduce((s, c) => s + c.price, 0))}</strong>{a.concession && <span className="tag tag-warn" style={{ marginLeft: 8 }}>concession requested</span>}</p>
+            <button type="button" className="linkish small" onClick={() => setOpen(open === a.id ? null : a.id)}>{open === a.id ? 'Hide details' : 'Show details'}</button>
+            {open === a.id && (
+              <div className="app-detail">
+                <dl>
+                  <div><dt>Date of birth</dt><dd>{a.student.dob ? date(a.student.dob) : '-'}</dd></div>
+                  <div><dt>Gender</dt><dd>{a.student.gender || '-'}</dd></div>
+                  <div><dt>School</dt><dd>{a.student.school || '-'}</dd></div>
+                  <div><dt>Board</dt><dd>{a.student.board || '-'}</dd></div>
+                  <div><dt>Last result</dt><dd>{a.student.lastResult || '-'}</dd></div>
+                  <div><dt>Mode</dt><dd>{a.mode}</dd></div>
+                  <div><dt>City / address</dt><dd>{[a.guardian.city, a.guardian.address].filter(Boolean).join(', ') || '-'}</dd></div>
+                  <div><dt>Heard from</dt><dd>{a.heardFrom || '-'}</dd></div>
+                </dl>
+                {a.notes && <p><strong>Notes:</strong> {a.notes}</p>}
+                <label className="small">Note shown to the parent on the status page
+                  <input defaultValue={a.adminNote || ''} maxLength={500} onBlur={(e) => e.target.value !== (a.adminNote || '') && patch(a, { adminNote: e.target.value })} placeholder="e.g. Placement test on Saturday at 11 am" />
+                </label>
+              </div>
+            )}
           </article>
         ))}</div>
       )}

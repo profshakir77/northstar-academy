@@ -28,8 +28,8 @@ const voices = [
 ];
 
 const faqs = [
-  ['How much are the fees?', 'Fees are per course and shown on every course page, from Rs 9,000 for Grade 6-8 to Rs 32,000 for A Level. A second sibling gets 10% off, and we offer concessions to students who need them.'],
-  ['Can my child try a class before we pay?', 'Yes. Book a free trial class from the Admissions page. We also do a short placement test so your child joins a group at the right pace.'],
+  ['How much are the fees?', 'Fees are per course and shown on every course page, from Rs 15,000 a term for Grade 6-8 to Rs 55,000 for A Level, plus a one-time admission fee of Rs 5,000. A second sibling gets 10% off, and we offer concessions to students who need them.'],
+  ['Can my child try a class before we pay?', 'Yes. Apply or book a free trial class from the Admissions page. We also do a short placement test so your child joins a group at the right pace.'],
   ['Do you teach online as well as on campus?', 'Both. Each course is marked Online, On campus or Hybrid. Online classes are live, not recorded lectures, and the recording is shared afterwards.'],
   ['Which boards and syllabuses do you cover?', 'Federal Board and Punjab Board for Matric and FSc, and Cambridge for O and A Level. ICS students are covered for Computer Science too.'],
   ['How will I know if my child is improving?', 'Every Saturday test is marked and stored in the student portal. Parents get a monthly report and can log in at any time to see progress.'],

@@ -75,7 +75,36 @@ const inquirySchema = new Schema({
   status: { type: String, enum: ['new', 'contacted', 'closed'], default: 'new' },
 }, { timestamps: true });
 
+const applicationSchema = new Schema({
+  ref: { type: String, required: true, unique: true },
+  student: {
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    dob: { type: Date },
+    gender: { type: String, enum: ['Female', 'Male', 'Prefer not to say'], default: 'Prefer not to say' },
+    level: { type: String, enum: LEVELS, required: true },
+    school: { type: String, trim: true, maxlength: 120 },
+    board: { type: String, trim: true, maxlength: 60 },
+    lastResult: { type: String, trim: true, maxlength: 40 },
+  },
+  guardian: {
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    relation: { type: String, trim: true, maxlength: 30 },
+    phone: { type: String, required: true, trim: true, maxlength: 30 },
+    email: { type: String, required: true, trim: true, lowercase: true, maxlength: 120 },
+    city: { type: String, trim: true, maxlength: 60 },
+    address: { type: String, trim: true, maxlength: 240 },
+  },
+  courses: [{ type: Schema.Types.ObjectId, ref: 'Course' }],
+  mode: { type: String, enum: ['Online', 'On campus', 'Hybrid', 'No preference'], default: 'No preference' },
+  heardFrom: { type: String, trim: true, maxlength: 60 },
+  notes: { type: String, trim: true, maxlength: 1500 },
+  concession: { type: Boolean, default: false },
+  status: { type: String, enum: ['submitted', 'test scheduled', 'admitted', 'waitlisted', 'declined'], default: 'submitted', index: true },
+  adminNote: { type: String, trim: true, maxlength: 500 },
+}, { timestamps: true });
+
 export const User = models.User || model('User', userSchema);
 export const Course = models.Course || model('Course', courseSchema);
 export const Enrollment = models.Enrollment || model('Enrollment', enrollmentSchema);
 export const Inquiry = models.Inquiry || model('Inquiry', inquirySchema);
+export const Application = models.Application || model('Application', applicationSchema);

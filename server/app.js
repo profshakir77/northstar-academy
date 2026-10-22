@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 import Stripe from 'stripe';
 import { z } from 'zod';
 import { connectDB } from './db.js';
-import { User, Course, Enrollment, Inquiry, LEVELS } from './models.js';
+import { User, Course, Enrollment, Inquiry, Application, LEVELS } from './models.js';
 import { issueSession, clearSession, loadUser, requireAuth, requireRole } from './auth.js';
 import { ensureSeed, DEMO } from './seed.js';
 
@@ -22,6 +22,7 @@ const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).cat
 const isId = (v) => mongoose.isValidObjectId(v);
 const isDemoAccount = (u) => [DEMO.student.email, DEMO.instructor.email].includes(u.email);
 const stripe = () => (process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null);
+const ADMISSION_FEE = 5000; // one-time, PKR
 const siteUrl = (req) => process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
 
 // --- database + first-run seed --------------------------------------------
@@ -52,7 +53,7 @@ const parse = (schema, data) => {
 
 // --- health -------------------------------------------------------------
 app.get('/api/health', (_req, res) => res.json({ ok: true, db: !!process.env.MONGODB_URI, stripe: !!process.env.STRIPE_SECRET_KEY }));
-app.get('/api/config', (_req, res) => res.json({ stripe: !!process.env.STRIPE_SECRET_KEY, demoPayments: !process.env.STRIPE_SECRET_KEY && process.env.DEMO_PAYMENTS !== 'false', demo: DEMO }));
+app.get('/api/config', (_req, res) => res.json({ admissionFee: ADMISSION_FEE, stripe: !!process.env.STRIPE_SECRET_KEY, demoPayments: !process.env.STRIPE_SECRET_KEY && process.env.DEMO_PAYMENTS !== 'false', demo: DEMO }));
 
 // --- auth ---------------------------------------------------------------
 const emailSchema = z.string().trim().toLowerCase().email('Enter a valid email.').max(120);
@@ -291,13 +292,14 @@ app.get('/api/manage/courses/:id/students', requireRole('instructor', 'admin'), 
 
 // --- admin --------------------------------------------------------------
 app.get('/api/admin/stats', requireRole('admin'), wrap(async (_req, res) => {
-  const [students, instructors, courses, active, pending, inquiries, revenue, recent] = await Promise.all([
+  const [students, instructors, courses, active, pending, inquiries, revenue, recent, applications] = await Promise.all([
     User.countDocuments({ role: 'student' }), User.countDocuments({ role: 'instructor' }), Course.countDocuments(),
     Enrollment.countDocuments({ status: 'active' }), Enrollment.countDocuments({ status: 'pending' }), Inquiry.countDocuments({ status: 'new' }),
     Enrollment.aggregate([{ $match: { status: 'active', paymentMethod: { $in: ['stripe', 'cash'] } } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
     Enrollment.find().sort({ createdAt: -1 }).limit(8).populate('student', 'name').populate('course', 'title').lean(),
+    Application.countDocuments({ status: 'submitted' }),
   ]);
-  res.json({ students, instructors, courses, active, pending, newInquiries: inquiries, revenue: revenue[0]?.total || 0, recent: recent.filter((e) => e.student && e.course).map((e) => ({ id: e._id.toString(), student: e.student.name, course: e.course.title, status: e.status, method: e.paymentMethod, amount: e.amount, at: e.createdAt })) });
+  res.json({ students, instructors, courses, active, pending, newInquiries: inquiries, newApplications: applications, revenue: revenue[0]?.total || 0, recent: recent.filter((e) => e.student && e.course).map((e) => ({ id: e._id.toString(), student: e.student.name, course: e.course.title, status: e.status, method: e.paymentMethod, amount: e.amount, at: e.createdAt })) });
 }));
 
 app.get('/api/admin/users', requireRole('admin'), wrap(async (req, res) => {
@@ -343,6 +345,69 @@ app.patch('/api/admin/inquiries/:id', requireRole('admin'), wrap(async (req, res
   if (!isId(req.params.id)) return res.status(400).json({ error: 'Invalid id.' });
   const { status } = parse(z.object({ status: z.enum(['new', 'contacted', 'closed']) }), req.body);
   await Inquiry.findByIdAndUpdate(req.params.id, { $set: { status } });
+  res.json({ ok: true });
+}));
+
+// --- admission applications --------------------------------------------
+const applyLimiter = rateLimit({ windowMs: 60 * 60 * 1000, limit: 5, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'Too many applications from this connection. Please call the office.' } });
+const optional = (schema) => z.preprocess((v) => (v === '' || v == null ? undefined : v), schema.optional());
+
+app.post('/api/applications', applyLimiter, wrap(async (req, res) => {
+  const body = parse(z.object({
+    student: z.object({
+      name: z.string().trim().min(2, 'Enter the student’s full name.').max(80),
+      dob: optional(z.coerce.date()),
+      gender: optional(z.enum(['Female', 'Male', 'Prefer not to say'])),
+      level: z.enum(LEVELS, { errorMap: () => ({ message: 'Choose the class the student is applying for.' }) }),
+      school: optional(z.string().trim().max(120)),
+      board: optional(z.string().trim().max(60)),
+      lastResult: optional(z.string().trim().max(40)),
+    }),
+    guardian: z.object({
+      name: z.string().trim().min(2, 'Enter the parent or guardian’s name.').max(80),
+      relation: optional(z.string().trim().max(30)),
+      phone: z.string().trim().min(7, 'Enter a phone number we can call.').max(30),
+      email: emailSchema,
+      city: optional(z.string().trim().max(60)),
+      address: optional(z.string().trim().max(240)),
+    }),
+    courses: z.array(z.string().refine(isId)).min(1, 'Choose at least one course.').max(6),
+    mode: optional(z.enum(['Online', 'On campus', 'Hybrid', 'No preference'])),
+    heardFrom: optional(z.string().trim().max(60)),
+    notes: optional(z.string().trim().max(1500)),
+    concession: z.boolean().optional(),
+    consent: z.literal(true, { errorMap: () => ({ message: 'Please confirm the details are correct.' }) }),
+    website: z.string().max(0).optional(),
+  }), req.body);
+  const found = await Course.find({ _id: { $in: body.courses }, published: true }).select('_id title price').lean();
+  if (!found.length) return res.status(400).json({ error: 'Choose at least one course.' });
+  const year = new Date().getFullYear();
+  const count = await Application.countDocuments({ ref: new RegExp(`^NS-${year}-`) });
+  let ref = `NS-${year}-${String(count + 1).padStart(4, '0')}`;
+  if (await Application.exists({ ref })) ref = `NS-${year}-${Date.now().toString().slice(-6)}`;
+  const { consent, website, ...data } = body;
+  await Application.create({ ...data, courses: found.map((c) => c._id), ref });
+  const tuition = found.reduce((a, c) => a + c.price, 0);
+  res.status(201).json({ ok: true, ref, courses: found.map((c) => c.title), tuition, admissionFee: ADMISSION_FEE });
+}));
+
+app.get('/api/applications/:ref', wrap(async (req, res) => {
+  const { email } = parse(z.object({ email: emailSchema }), req.query);
+  const a = await Application.findOne({ ref: String(req.params.ref).toUpperCase(), 'guardian.email': email }).populate('courses', 'title').lean();
+  if (!a) return res.status(404).json({ error: 'No application found with that reference and email.' });
+  res.json({ ref: a.ref, status: a.status, student: a.student.name, level: a.student.level, courses: a.courses.map((c) => c.title), submitted: a.createdAt, note: a.adminNote || '' });
+}));
+
+app.get('/api/admin/applications', requireRole('admin'), wrap(async (_req, res) => {
+  const list = await Application.find().sort({ createdAt: -1 }).limit(300).populate('courses', 'title price').lean();
+  res.json({ applications: list.map((a) => ({ ...a, id: a._id.toString(), _id: undefined })) });
+}));
+
+app.patch('/api/admin/applications/:id', requireRole('admin'), wrap(async (req, res) => {
+  if (!isId(req.params.id)) return res.status(400).json({ error: 'Invalid id.' });
+  const body = parse(z.object({ status: z.enum(['submitted', 'test scheduled', 'admitted', 'waitlisted', 'declined']).optional(), adminNote: z.string().trim().max(500).optional() }), req.body);
+  const a = await Application.findByIdAndUpdate(req.params.id, { $set: body }, { new: true });
+  if (!a) return res.status(404).json({ error: 'Application not found.' });
   res.json({ ok: true });
 }));
 
