@@ -1,0 +1,28 @@
+{
+  "name": "northstar-academy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Northstar Tuition Academy: full-stack MERN school tuition platform (MongoDB, Express, React, Node).",
+  "type": "module",
+  "scripts": {
+    "dev:api": "node --env-file-if-exists=.env --watch server/dev.js",
+    "dev:client": "npm --prefix client run dev",
+    "build": "npm --prefix client install --include=dev && npm --prefix client run build",
+    "start": "node --env-file-if-exists=.env server/dev.js",
+    "dev": "echo \"Run npm run dev:api and npm run dev:client in two terminals\""
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "bcryptjs": "2.4.3",
+    "cookie-parser": "1.4.7",
+    "express": "4.22.3",
+    "express-rate-limit": "7.5.1",
+    "helmet": "8.3.0",
+    "jsonwebtoken": "9.0.3",
+    "mongoose": "8.24.6",
+    "stripe": "17.7.0",
+    "zod": "3.25.76"
+  }
+}
