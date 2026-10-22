@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
+import { useSeo } from '../seo.js';
 import { Alert } from '../components/ui.jsx';
 
 // Only allow same-site relative paths after sign-in.
@@ -14,7 +15,8 @@ export function Login() {
   const [f, setF] = useState({ email: '', password: '' });
   const [demo, setDemo] = useState(null);
   const [state, setState] = useState({ busy: false, err: '' });
-  useEffect(() => { document.title = 'Sign in | Northstar Tuition Academy'; api('/config').then((d) => setDemo(d.demo)).catch(() => {}); }, []);
+  useSeo({ title: 'Sign in', path: '/login', noindex: true });
+  useEffect(() => { api('/config').then((d) => setDemo(d.demo)).catch(() => {}); }, []);
 
   async function submit(e) {
     e.preventDefault();
@@ -50,7 +52,7 @@ export function Register() {
   const nav = useNavigate();
   const [f, setF] = useState({ name: '', email: '', password: '', phone: '', grade: '' });
   const [state, setState] = useState({ busy: false, err: '' });
-  useEffect(() => { document.title = 'Create account | Northstar Tuition Academy'; }, []);
+  useSeo({ title: 'Create a student account', path: '/register', noindex: true });
   const on = (k) => (e) => setF({ ...f, [k]: e.target.value });
 
   async function submit(e) {

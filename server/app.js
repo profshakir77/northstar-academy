@@ -354,6 +354,18 @@ app.post('/api/inquiries', formLimiter, wrap(async (req, res) => {
   res.status(201).json({ ok: true, message: 'Thank you! Our admissions team will contact you within one working day.' });
 }));
 
+// --- sitemap (served at /sitemap.xml through a Vercel rewrite) ----------
+app.get(['/sitemap.xml', '/api/sitemap.xml'], wrap(async (_req, res) => {
+  await connectDB();
+  await ensureSeed();
+  const base = (process.env.SITE_URL || 'https://northstar-tuition-academy.vercel.app').replace(/\/$/, '');
+  const courses = await Course.find({ published: true }).select('slug updatedAt').lean();
+  const pages = ['/', '/courses', '/teachers', '/about', '/admissions'].map((p) => ({ loc: base + p, pri: p === '/' ? '1.0' : '0.8' }));
+  const items = [...pages, ...courses.map((c) => ({ loc: `${base}/courses/${c.slug}`, pri: '0.7', mod: c.updatedAt }))];
+  res.type('application/xml').set('Cache-Control', 'public, s-maxage=3600');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${items.map((i) => `  <url><loc>${i.loc}</loc>${i.mod ? `<lastmod>${new Date(i.mod).toISOString().slice(0, 10)}</lastmod>` : ''}<priority>${i.pri}</priority></url>`).join('\n')}\n</urlset>\n`);
+}));
+
 // --- errors -------------------------------------------------------------
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found.' }));
 // eslint-disable-next-line no-unused-vars

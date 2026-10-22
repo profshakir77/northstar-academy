@@ -1,14 +1,14 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useSeo } from '../seo.js';
 import { Img } from '../components/ui.jsx';
 
 const u = (id) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1000&q=70`;
 
 export default function About() {
-  useEffect(() => { document.title = 'About | Northstar Tuition Academy'; }, []);
+  useSeo({ title: 'About Us', description: 'How Northstar Tuition Academy in Islamabad teaches: one topic a week, practice at home, a Saturday test and a monthly report for parents.', path: '/about' });
   return (
     <>
-      <section className="page-hero"><div className="container"><span className="eyebrow">About us</span><h1>A small academy with a simple method</h1><p className="lead">Explain the idea clearly, practise it the same week, test it on Saturday, and tell parents how it went.</p></div></section>
+      <section className="page-hero"><div className="container"><span className="eyebrow">About us</span><h1>A small academy with a plain, simple method</h1><p className="lead">Teach one idea properly. Practise it the same week. Test it on Saturday. Tell parents how it went. Then do it again next week.</p></div></section>
       <section className="section tight">
         <div className="container split">
           <div>

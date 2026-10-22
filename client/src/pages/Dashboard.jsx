@@ -4,6 +4,7 @@ import { api, date, pkr } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { Alert, Empty, Img, Initials } from '../components/ui.jsx';
 import CourseManager from './CourseManager.jsx';
+import { useSeo } from '../seo.js';
 import { AdminOverview, AdminUsers, AdminEnrollments, AdminInquiries } from './Admin.jsx';
 
 const menus = {
@@ -14,7 +15,7 @@ const menus = {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  useEffect(() => { document.title = 'Dashboard | Northstar Tuition Academy'; }, []);
+  useSeo({ title: 'Dashboard', path: '/dashboard', noindex: true });
   const menu = menus[user.role] || menus.student;
   return (
     <div className="container dash">

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { api } from '../api.js';
+import { useSeo } from '../seo.js';
 import { Alert } from '../components/ui.jsx';
 
 const LEVELS = ['Grade 6-8', 'Matric (9-10)', 'FSc / ICS (11-12)', 'O Level', 'A Level'];
@@ -7,7 +8,7 @@ const LEVELS = ['Grade 6-8', 'Matric (9-10)', 'FSc / ICS (11-12)', 'O Level', 'A
 export default function Admissions() {
   const [f, setF] = useState({ name: '', email: '', phone: '', level: '', message: '', website: '' });
   const [state, setState] = useState({ busy: false, ok: '', err: '' });
-  useEffect(() => { document.title = 'Admissions | Northstar Tuition Academy'; }, []);
+  useSeo({ title: 'Admissions and Free Trial Class', description: 'Book a free trial class at Northstar Tuition Academy, Islamabad. Tell us the class and subjects and we call back within one working day.', path: '/admissions' });
   const on = (k) => (e) => setF({ ...f, [k]: e.target.value });
 
   async function submit(e) {

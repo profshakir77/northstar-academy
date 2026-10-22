@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api, date, pkr } from '../api.js';
 import { useAuth } from '../auth.jsx';
+import { useSeo, crumbs, SITE } from '../seo.js';
 import { Alert, Img, Initials } from '../components/ui.jsx';
 
 export default function CourseDetail() {
@@ -16,7 +17,20 @@ export default function CourseDetail() {
 
   const load = () => api(`/courses/${slug}`).then(setData).catch((e) => setErr(e.message));
   useEffect(() => { setData(null); load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [slug, user?.id]);
-  useEffect(() => { if (data?.course) document.title = `${data.course.title} | Northstar Tuition Academy`; }, [data]);
+  const sc = data?.course;
+  useSeo({
+    title: sc ? `${sc.title} Tuition` : 'Course',
+    description: sc ? `${sc.summary} ${sc.mode} classes, ${sc.schedule}. Fee ${sc.price ? 'Rs ' + sc.price.toLocaleString('en-PK') : 'free'}. Taught by ${sc.instructor?.name || 'our teachers'}.` : undefined,
+    path: `/courses/${slug}`,
+    image: sc?.image,
+    jsonLd: sc ? [
+      { '@context': 'https://schema.org', '@type': 'Course', name: sc.title, description: sc.summary, url: `${SITE}/courses/${sc.slug}`, image: sc.image, educationalLevel: sc.level, inLanguage: 'en',
+        provider: { '@type': 'EducationalOrganization', name: 'Northstar Tuition Academy', sameAs: SITE },
+        offers: { '@type': 'Offer', price: sc.price, priceCurrency: 'PKR', availability: sc.seatsLeft > 0 ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut', category: 'Paid' },
+        hasCourseInstance: { '@type': 'CourseInstance', courseMode: sc.mode === 'Online' ? 'online' : sc.mode === 'On campus' ? 'onsite' : 'blended', startDate: sc.startDate?.slice(0, 10), instructor: sc.instructor ? { '@type': 'Person', name: sc.instructor.name } : undefined } },
+      crumbs([['Home', '/'], ['Courses', '/courses'], [sc.title, `/courses/${sc.slug}`]]),
+    ] : undefined,
+  });
 
   if (err) return <div className="container page"><Alert>{err}</Alert><Link to="/courses">Back to courses</Link></div>;
   if (!data) return <div className="container page"><div className="spinner" /></div>;

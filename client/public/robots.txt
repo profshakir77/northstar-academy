@@ -1,3 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /dashboard
+Disallow: /payment/
+Disallow: /api/
+
+Sitemap: https://northstar-tuition-academy.vercel.app/sitemap.xml

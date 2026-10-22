@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
+import { useSeo } from '../seo.js';
 import { CourseCard, Empty } from '../components/ui.jsx';
 
 export default function Courses() {
@@ -9,6 +10,13 @@ export default function Courses() {
   const [courses, setCourses] = useState(null);
   const [q, setQ] = useState(params.get('q') || '');
   const filters = { level: params.get('level') || '', subject: params.get('subject') || '', mode: params.get('mode') || '', q: params.get('q') || '' };
+
+  const lvl = filters.level;
+  useSeo({
+    title: lvl ? `${lvl} Tuition Classes` : 'Courses: Matric, FSc, O & A Level Tuition',
+    description: lvl ? `${lvl} tuition in Islamabad and online. Small groups, weekly tests and past-paper practice. See fees, timings and teachers.` : 'Browse tuition courses for Grade 6 to A Level in Islamabad and online: Maths, Physics, Chemistry, Biology, Computer Science and English. Fees and timings on every course.',
+    path: lvl ? `/courses?level=${encodeURIComponent(lvl)}` : '/courses',
+  });
 
   useEffect(() => { api('/courses/meta').then(setMeta).catch(() => {}); }, []);
   useEffect(() => {

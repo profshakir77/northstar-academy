@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
+import { useSeo } from '../seo.js';
 import { Alert } from '../components/ui.jsx';
 
 export default function PaymentSuccess() {
   const [params] = useSearchParams();
+  useSeo({ title: 'Payment', path: '/payment/success', noindex: true });
   const [state, setState] = useState({ loading: true, err: '', course: null });
   useEffect(() => {
     const id = params.get('session_id');
